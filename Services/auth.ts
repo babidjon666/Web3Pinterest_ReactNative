@@ -1,4 +1,5 @@
 import axios from "axios";
+import { User } from "../Models/User";
 
 function ValidateUserName(userName: string): boolean {
   if (userName.length >= 15) {
@@ -22,41 +23,19 @@ function ValidateEmail(email: string): boolean {
   return true;
 }
 
-async function SignUp(email: string, password: string, userName: string) {
-  try {
+async function SignUp(email: string, password: string, userName: string): Promise<User> {
     ValidateEmail(email);
     ValidatePassword(password);
     ValidateUserName(userName);
 
-    const response = await axios.post("http://127.0.0.1:5252/api/Auth/signup", {
-      email,
-      password,
-      userName,
-    });
-
-    if (response && response.data) {
-      // Возвращаем успешный ответ с email
-      return response.data; 
-    } else {
-      console.error("Ответ от сервера пустой или некорректный");
-      throw new Error("Ответ от сервера пустой или некорректный");
+    try {
+        const response = await axios.post("http://127.0.0.1:5252/api/Auth/signup", {
+            email, password, userName
+        });
+        return new User(response.data.email, response.data.userName);
+    } catch (error: any) {
+        throw new Error(error.response?.data || "Ошибка регистрации");
     }
-
-  } catch (error: any) {
-    // Логируем ошибку и передаем сообщение об ошибке
-    console.error("Ошибка регистрации:", error.response ? error.response.data : error.message);
-
-    if (error.response) {
-      // Сервер вернул ошибку
-      throw new Error(error.response.data);  // Бросаем ошибку с сообщением, которое пришло от сервера
-    } else if (error.message) {
-      // Ошибка валидации или запроса
-      throw new Error(error.message);  // Бросаем ошибку с локальным сообщением
-    } else {
-      // Для других случаев
-      throw new Error("Неизвестная ошибка");
-    }
-  }
 }
 
 export { SignUp };
